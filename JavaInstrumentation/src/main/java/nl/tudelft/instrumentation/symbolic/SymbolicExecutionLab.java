@@ -1,6 +1,7 @@
 package nl.tudelft.instrumentation.symbolic;
 
 import java.util.*;
+
 import com.microsoft.z3.*;
 import nl.tudelft.instrumentation.fuzzing.DistanceTracker;
 
@@ -20,13 +21,13 @@ public class SymbolicExecutionLab {
 
     static Context c;
 
-    static void initialize(String[] inputSymbols){
+    static void initialize(String[] inputSymbols) {
         // Initialise a random trace from the input symbols of the problem.
         currentTrace = generateRandomTrace(inputSymbols);
         c = PathTracker.ctx;
     }
 
-    static MyVar createVar(String name, Expr value, Sort s){
+    static MyVar createVar(String name, Expr value, Sort s) {
         Context c = PathTracker.ctx;
         /**
          * Create var, assign value and add to path constraint.
@@ -39,12 +40,12 @@ public class SymbolicExecutionLab {
         return new MyVar(z3var, name);
     }
 
-    static MyVar createInput(String name, Expr value, Sort s){
+    static MyVar createInput(String name, Expr value, Sort s) {
         // Create an input var, these should be free variables!
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s); //create a new symbolic variable
 
         BoolExpr constraint = c.mkFalse();//make the constraint false
-        for(String input: PathTracker.inputSymbols){ //loop through all input symbols
+        for (String input : PathTracker.inputSymbols) { //loop through all input symbols
             constraint = c.mkOr(c.mkEq(z3var, c.mkString(input)), constraint); //or the constraints (a.k.a constrain the problem to input symbols)
         }
         PathTracker.addToModel(c.mkAnd(constraint)); // add the constraints to the model
@@ -55,46 +56,100 @@ public class SymbolicExecutionLab {
         return returnVar;
     }
 
-    static MyVar createBoolExpr(BoolExpr var, String operator){
+    static MyVar createBoolExpr(BoolExpr var, String operator) {
         // Any unary expression (!)
-        if(operator.equals("!")) return new MyVar(PathTracker.ctx.mkNot(var));
+        if (operator.equals("!")) return new MyVar(PathTracker.ctx.mkNot(var));
         else throw new UnsupportedOperationException("Unsupported Unary operator" + operator);
     }
 
-    static MyVar createBoolExpr(BoolExpr left_var, BoolExpr right_var, String operator){
+    static MyVar createBoolExpr(BoolExpr left_var, BoolExpr right_var, String operator) {
         // Any binary expression (&, &&, |, ||)
-        return new MyVar(PathTracker.ctx.mkAnd(left_var, right_var));
+        switch (operator) {
+            case "&":
+            case "&&":
+                return new MyVar(c.mkAnd(left_var, right_var));
+            case "|":
+            case "||":
+                return new MyVar(c.mkOr(left_var, right_var));
+            case "==":
+                return new MyVar(c.mkEq(left_var, right_var));
+            case "!=":
+                return new MyVar(c.mkNot(c.mkEq(left_var, right_var)));
+            default:
+                throw new UnsupportedOperationException("Unsupported Binary Operator" + operator);
+        }
     }
 
-    static MyVar createIntExpr(IntExpr var, String operator){
+    static MyVar createIntExpr(IntExpr var, String operator) {
         // Any unary expression (+, -)
-        if(operator.equals("+") || operator.equals("-"))
-            return new MyVar(PathTracker.ctx.mkInt(0));
-        return new MyVar(PathTracker.ctx.mkFalse());
+
+        switch (operator) {
+            case "+":
+                return new MyVar(var);
+            case "-":
+                return new MyVar(c.mkUnaryMinus(var));//ask this
+
+            default:
+                throw new UnsupportedOperationException("Unsupported Unary Operator" + operator);
+        }
     }
 
-    static MyVar createIntExpr(IntExpr left_var, IntExpr right_var, String operator){
+    static MyVar createIntExpr(IntExpr left_var, IntExpr right_var, String operator) {
         // Any binary expression (+, -, /, etc)
-        if(operator.equals("+") || operator.equals("-") || operator.equals("/") || operator.equals("*") || operator.equals("%") || operator.equals("^"))
-            return new MyVar(PathTracker.ctx.mkInt(0));
-        return new MyVar(PathTracker.ctx.mkFalse());
+
+        switch (operator) {
+            case "+":
+                return new MyVar(c.mkAdd(left_var, right_var));
+            case "-":
+                return new MyVar(c.mkSub(left_var, right_var));
+            case "/":
+                return new MyVar(c.mkDiv(left_var, right_var));
+            case "*":
+                return new MyVar(c.mkMul(left_var, right_var));
+            case "%":
+                return new MyVar(c.mkMod(left_var, right_var));
+            case "==":
+                return new MyVar(c.mkEq(left_var, right_var));
+            case "!=":
+                return new MyVar(c.mkNot(c.mkEq(left_var, right_var)));
+            case "<=":
+                return new MyVar(c.mkLe(left_var, right_var));
+            case ">=":
+                return new MyVar(c.mkGe(left_var, right_var));
+            case ">":
+                return new MyVar(c.mkGt(left_var, right_var));
+            case "<":
+                return new MyVar(c.mkLt(left_var, right_var));
+//            case "^": return new MyVar(c.mkPower()); (I dont know about this)
+
+            default:
+                throw new UnsupportedOperationException("Unsupported Binary Operator" + operator);
+        }
     }
 
-    static MyVar createStringExpr(SeqExpr left_var, SeqExpr right_var, String operator){
+    static MyVar createStringExpr(SeqExpr left_var, SeqExpr right_var, String operator) {
         // We only support String.equals
-        return new MyVar(PathTracker.ctx.mkFalse());
+        switch (operator){
+            case "==":
+                return new MyVar(c.mkEq(left_var, right_var));
+            case "!=":
+                return new MyVar(c.mkNot(c.mkEq(left_var, right_var)));
+            default:
+                throw new UnsupportedOperationException("Unsupported Binary Operator" + operator);
+        }
     }
 
-    static void assign(MyVar var, String name, Expr value, Sort s){
+    static void assign(MyVar var, String name, Expr value, Sort s) {
         // All variable assignments, use single static assignment
-        Expr z3var = c.mkConst(c.mkSymbol(name + "_"+ PathTracker.z3counter++), s);
+        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         var.z3var = z3var;
         PathTracker.addToModel(c.mkEq(z3var, value));
-        System.out.println(PathTracker.z3model);
     }
 
-    static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
+    static void encounteredNewBranch(MyVar condition, boolean value, int line_nr) {
         // Call the solver
+        System.out.println(PathTracker.z3model);
+
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
@@ -103,10 +158,11 @@ public class SymbolicExecutionLab {
 
     /**
      * Method for fuzzing new inputs for a program.
+     *
      * @param inputSymbols the inputSymbols to fuzz from.
      * @return a fuzzed sequence
      */
-    static List<String> fuzz(String[] inputSymbols){
+    static List<String> fuzz(String[] inputSymbols) {
         /*
          * Add here your code for fuzzing a new sequence for the RERS problem.
          * You can guide your fuzzer to fuzz "smart" input sequences to cover
@@ -119,6 +175,7 @@ public class SymbolicExecutionLab {
 
     /**
      * Generate a random trace from an array of symbols.
+     *
      * @param symbols the symbols from which a trace should be generated from.
      * @return a random trace that is generated from the given symbols.
      */
@@ -134,7 +191,7 @@ public class SymbolicExecutionLab {
         initialize(PathTracker.inputSymbols);
         PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
-        while(!isFinished) {
+        while (!isFinished) {
             // Do things!
             try {
                 System.out.println("Woohoo, looping!");
@@ -145,8 +202,9 @@ public class SymbolicExecutionLab {
         }
     }
 
-    public static void output(String out){
+    public static void output(String out) {
 //        System.out.println(out);
     }
+
 
 }
