@@ -10,3 +10,6 @@ misc.xml
 modules.xml
 SymbolicFuzzing.iml
 vcs.xml
+/compiler.xml
+/jarRepositories.xml
+/libraries/
