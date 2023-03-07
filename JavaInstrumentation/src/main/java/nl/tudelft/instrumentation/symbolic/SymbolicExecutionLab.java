@@ -3,11 +3,9 @@ package nl.tudelft.instrumentation.symbolic;
 import java.util.*;
 
 import com.microsoft.z3.*;
-import nl.tudelft.instrumentation.fuzzing.DistanceTracker;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Random;
-import java.io.FileWriter;
-import java.io.IOException;
 
 /**
  * You should write your solution using this class.
@@ -18,6 +16,16 @@ public class SymbolicExecutionLab {
     static Boolean isFinished = false;
     static List<String> currentTrace;
     static int traceLength = 10;
+    private static PriorityQueue<BoolExpr> visitedBranches;
+    private static boolean satisfied = true;
+
+    private static BoolExpr previousNegtatedBranch;
+
+    private static PriorityQueue<BoolExpr> unsatisfiedBranches;
+
+    private static HashSet<Pair> branches;
+
+    static Set<Integer> errors;
 
     static Context c;
 
@@ -25,6 +33,10 @@ public class SymbolicExecutionLab {
         // Initialise a random trace from the input symbols of the problem.
         currentTrace = generateRandomTrace(inputSymbols);
         c = PathTracker.ctx;
+        visitedBranches = new PriorityQueue<>();
+        branches = new HashSet<>();
+        errors = new TreeSet<>();
+        previousNegtatedBranch = null;
     }
 
     static MyVar createVar(String name, Expr value, Sort s) {
@@ -120,7 +132,7 @@ public class SymbolicExecutionLab {
                 return new MyVar(c.mkGt(left_var, right_var));
             case "<":
                 return new MyVar(c.mkLt(left_var, right_var));
-//            case "^": return new MyVar(c.mkPower()); (I dont know about this)
+            case "^": return new MyVar(c.mkPower(left_var, right_var));
 
             default:
                 throw new UnsupportedOperationException("Unsupported Binary Operator" + operator);
@@ -141,19 +153,43 @@ public class SymbolicExecutionLab {
 
     static void assign(MyVar var, String name, Expr value, Sort s) {
         // All variable assignments, use single static assignment
-        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
-        var.z3var = z3var;
-        PathTracker.addToModel(c.mkEq(z3var, value));
+        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s); // make a new static assignment
+        var.z3var = z3var; // make use the pointer is updated
+        PathTracker.addToModel(c.mkEq(z3var, value)); //add to the model
     }
 
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr) {
-        // Call the solver
-        System.out.println(PathTracker.z3model);
 
+        //add branches
+        branches.add(new Pair(line_nr, value));
+
+        // Call the solver
+        if(condition.z3var instanceof  BoolExpr){
+
+            if(!satisfied) unsatisfiedBranches.add(previousNegtatedBranch);
+
+            BoolExpr expr = (BoolExpr) condition.z3var; // make sure branch is a boolean expr
+            visitedBranches.add(expr);//add current branch to expr
+
+            BoolExpr negExpr = c.mkNot(expr); // negate the boolean expr
+            if(unsatisfiedBranches.contains(negExpr)) return;
+
+            if(visitedBranches.contains(negExpr)){
+                return; // we have already seen the negative branch
+            }
+
+            previousNegtatedBranch = negExpr;
+            satisfied = false;
+            PathTracker.solve(negExpr, true);
+        }
+
+        throw new UnsupportedOperationException("New Branch does not have a boolean condition");
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // Hurray! found a new branch using these new inputs!
+        currentTrace = new_inputs;
+        satisfied = true;
     }
 
     /**
@@ -189,22 +225,37 @@ public class SymbolicExecutionLab {
 
     static void run() {
         initialize(PathTracker.inputSymbols);
-        PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
+
+
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
         while (!isFinished) {
             // Do things!
-            try {
-                System.out.println("Woohoo, looping!");
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            visitedBranches.forEach(PathTracker::addToBranches); // add all visited branches
+
+            if(!satisfied){
+                unsatisfiedBranches.add(previousNegtatedBranch);
             }
+
+            System.out.println("Branch size " +branches);
+            System.out.println("Errors: " + errors);
+            System.out.println("currentTrace:" + currentTrace);
+
+            PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
+//            PathTracker.reset();//reset the branches;
+            satisfied = true;
         }
     }
 
     public static void output(String out) {
 //        System.out.println(out);
+        if (StringUtils.contains(out, "error")) {
+            errors.add(Integer.parseInt(out.replaceAll("Invalid input: error_", "")));
+        }
     }
+
+
+    ////////////////////////custom methods////////////////////////////////
+
 
 
 }
