@@ -184,7 +184,7 @@ public class SymbolicExecutionLab {
             PathTracker.solve(negExpr, true);
 
         }
-        else throw new UnsupportedOperationException("New Branch does not have a boolean condition");
+        else throw new UnsupportedOperationException("New Branch does not have a boolean condition" + condition);
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
