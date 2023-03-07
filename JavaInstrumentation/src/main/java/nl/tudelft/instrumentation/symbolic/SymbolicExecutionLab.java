@@ -37,6 +37,7 @@ public class SymbolicExecutionLab {
         branches = new HashSet<>();
         errors = new TreeSet<>();
         previousNegtatedBranch = null;
+        unsatisfiedBranches = new PriorityQueue<>();
     }
 
     static MyVar createVar(String name, Expr value, Sort s) {
