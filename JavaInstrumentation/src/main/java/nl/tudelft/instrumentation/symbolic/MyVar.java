@@ -37,4 +37,12 @@ public class MyVar {
         this.name = n;
     }
 
+    @Override
+    public String toString() {
+        return "MyVar{" +
+                "z3var=" + z3var.toString() +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
 }

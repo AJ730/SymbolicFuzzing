@@ -182,9 +182,9 @@ public class SymbolicExecutionLab {
             previousNegtatedBranch = negExpr;
             satisfied = false;
             PathTracker.solve(negExpr, true);
-        }
 
-        throw new UnsupportedOperationException("New Branch does not have a boolean condition");
+        }
+        else throw new UnsupportedOperationException("New Branch does not have a boolean condition");
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
@@ -242,7 +242,7 @@ public class SymbolicExecutionLab {
             System.out.println("currentTrace:" + currentTrace);
 
             PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
-//            PathTracker.reset();//reset the branches;
+            PathTracker.reset();//reset the branches;
             satisfied = true;
         }
     }
