@@ -16,15 +16,13 @@ public class SymbolicExecutionLab {
     static Boolean isFinished = false;
     static List<String> currentTrace;
     static int traceLength = 10;
-    private static PriorityQueue<BoolExpr> visitedBranches;
     private static boolean satisfied = true;
-
     private static BoolExpr previousNegtatedBranch;
-
     private static PriorityQueue<BoolExpr> unsatisfiedBranches;
-
     private static HashSet<Pair> branches;
+    private static HashSet<BoolExpr> z3Branches;
 
+    private static Queue<LinkedList<String>> satisfiableTraces;
     static Set<Integer> errors;
 
     static Context c;
@@ -33,11 +31,12 @@ public class SymbolicExecutionLab {
         // Initialise a random trace from the input symbols of the problem.
         currentTrace = generateRandomTrace(inputSymbols);
         c = PathTracker.ctx;
-        visitedBranches = new PriorityQueue<>();
+        satisfiableTraces = new LinkedList<>();
         branches = new HashSet<>();
         errors = new TreeSet<>();
         previousNegtatedBranch = null;
         unsatisfiedBranches = new PriorityQueue<>();
+        z3Branches = new HashSet<>();
     }
 
     static MyVar createVar(String name, Expr value, Sort s) {
@@ -162,35 +161,36 @@ public class SymbolicExecutionLab {
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr) {
 
         //add branches
+        if(branches.contains(new Pair(line_nr, !value))) return;//visited the negated branch
+//        if(z3Branches.contains(previousNegtatedBranch)) return;
+
         branches.add(new Pair(line_nr, value));
 
         // Call the solver
         if(condition.z3var instanceof  BoolExpr){
 
-            if(!satisfied) unsatisfiedBranches.add(previousNegtatedBranch);
+            if(!satisfied) {
+                unsatisfiedBranches.add(previousNegtatedBranch);
+            }
 
             BoolExpr expr = (BoolExpr) condition.z3var; // make sure branch is a boolean expr
-            visitedBranches.add(expr);//add current branch to expr
-
-            BoolExpr negExpr = c.mkNot(expr); // negate the boolean expr
+            BoolExpr negExpr = c.mkEq(expr, c.mkBool(!value)); // Find constraint for negated value
             if(unsatisfiedBranches.contains(negExpr)) return;
-
-            if(visitedBranches.contains(negExpr)){
-                return; // we have already seen the negative branch
-            }
 
             previousNegtatedBranch = negExpr;
             satisfied = false;
-            PathTracker.solve(negExpr, true);
-
+            PathTracker.solve(negExpr, false);
         }
-        else throw new UnsupportedOperationException("New Branch does not have a boolean condition" + condition);
+        else {
+            throw new UnsupportedOperationException("New Branch does not have a boolean condition");
+        }
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // Hurray! found a new branch using these new inputs!
-        currentTrace = new_inputs;
         satisfied = true;
+        new_inputs.replaceAll(s -> s.replace("\"", ""));
+        satisfiableTraces.add(new_inputs);
     }
 
     /**
@@ -226,22 +226,24 @@ public class SymbolicExecutionLab {
 
     static void run() {
         initialize(PathTracker.inputSymbols);
-
+        PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
 
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
         while (!isFinished) {
             // Do things!
-            visitedBranches.forEach(PathTracker::addToBranches); // add all visited branches
+//            visitedBranches.forEach(PathTracker::addToBranches); // add all visited branches
 
-            if(!satisfied){
-                unsatisfiedBranches.add(previousNegtatedBranch);
-            }
-
-            System.out.println("Branch size " +branches);
+            System.out.println("Branch size " +branches.size());
             System.out.println("Errors: " + errors);
             System.out.println("currentTrace:" + currentTrace);
 
-            PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
+            while(!satisfiableTraces.isEmpty()){
+                currentTrace = satisfiableTraces.poll();
+                PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
+                System.out.println("currentTrace:" + currentTrace);
+                PathTracker.reset();
+            }
+
             PathTracker.reset();//reset the branches;
             satisfied = true;
         }
