@@ -1,16 +1,15 @@
 package nl.tudelft.instrumentation.symbolic;
 
-import com.github.javaparser.*;
-import com.github.javaparser.ast.*;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.stmt.*;
-import com.github.javaparser.ast.visitor.ModifierVisitor;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.type.*;
+import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.stmt.*;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.visitor.ModifierVisitor;
 
 /**
  * This class is used to parse the RERS problem and instrument the problem file with our own object types

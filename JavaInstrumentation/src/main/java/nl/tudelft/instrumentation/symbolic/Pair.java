@@ -2,7 +2,7 @@ package nl.tudelft.instrumentation.symbolic;
 
 import java.util.Objects;
 
-public class Pair {
+public class Pair  {
     int lineNmr;
     boolean triggered;
 

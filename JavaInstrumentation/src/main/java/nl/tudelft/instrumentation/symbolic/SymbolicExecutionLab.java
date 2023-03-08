@@ -1,11 +1,9 @@
 package nl.tudelft.instrumentation.symbolic;
 
-import java.util.*;
-
 import com.microsoft.z3.*;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Random;
+import java.util.*;
 
 /**
  * You should write your solution using this class.

@@ -1,10 +1,11 @@
 package nl.tudelft.instrumentation.symbolic;
 
-import java.util.*;
-import java.util.concurrent.*;
-
 import com.microsoft.z3.*;
 import nl.tudelft.instrumentation.runner.CallableTraceRunner;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.*;
 
 /**
  * This class is used for the symbolic execution lab.
@@ -15,7 +16,7 @@ public class PathTracker {
     public static Context ctx = new Context(cfg);
 
     public static int z3counter = 1; // used to give an ID to each variable.
-    public static BoolExpr z3model= ctx.mkTrue();
+    private static BoolExpr z3model= ctx.mkTrue();
     private static BoolExpr z3branches = ctx.mkTrue();
 
     public static Solver solver = ctx.mkSolver();
@@ -25,7 +26,7 @@ public class PathTracker {
     static CallableTraceRunner<Void> problem;
     static String[] inputSymbols;
     // Longest a single testcase is allowed to run
-    static final int timeoutMS = 1000;
+    static final int timeoutMS = 10000;
 
     /**
      * Used to reset the constraints and everything else of z3 before running the next sequence.

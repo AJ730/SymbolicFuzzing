@@ -1,10 +1,6 @@
 package nl.tudelft.instrumentation.symbolic;
 
-import java.util.*;
-import com.microsoft.z3.*;
-import java.util.Random;
-import java.io.FileWriter;
-import java.io.IOException;
+import com.microsoft.z3.Expr;
 
 /**
  * This class serves as a wrapper object for each of the java primitive
@@ -44,5 +40,4 @@ public class MyVar {
                 ", name='" + name + '\'' +
                 '}';
     }
-
 }
