@@ -1,11 +1,13 @@
-package nl.tudelft.instrumentation.symbolic;
-
-import java.util.*;
+package nl.tudelft.instrumentation.symbolic.symbolic;
 
 import com.microsoft.z3.*;
+import nl.tudelft.instrumentation.symbolic.MyVar;
+import nl.tudelft.instrumentation.symbolic.Pair;
+import nl.tudelft.instrumentation.symbolic.PathTracker;
+import nl.tudelft.instrumentation.symbolic.*;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Random;
+import java.util.*;
 
 /**
  * You should write your solution using this class.
@@ -17,7 +19,7 @@ public class SymbolicExecutionLab {
     static List<String> currentTrace;
     static int traceLength = 10;
     private static HashSet<BoolExpr> unsatisfiedBranches;
-    private static HashSet<Pair> branches;
+    private static HashSet<nl.tudelft.instrumentation.symbolic.Pair> branches;
     private static HashMap<BranchPair, ArrayList<String>> branchTraces;
 
     private static PriorityQueue<InputPair> satisfiableTraces;
