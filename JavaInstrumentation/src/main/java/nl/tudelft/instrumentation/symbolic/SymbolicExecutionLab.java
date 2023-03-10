@@ -251,7 +251,7 @@ public class SymbolicExecutionLab {
                 for (int i=0; i<traceLength; i++){
                     newTrace.set(i,li[r.nextInt(traceLength)]);
                 }
-                InputPair nt = new InputPair(1,new ArrayList<>(newTrace));
+                InputPair nt = new InputPair(current.lineNmr,new ArrayList<>(newTrace));
                 satisfiableTraces.add(nt);
                 PathTracker.reset();
             }
