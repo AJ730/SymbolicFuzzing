@@ -172,7 +172,12 @@ public class SymbolicExecutionLab {
 
         BoolExpr expr = (BoolExpr) condition.z3var; // make sure branch is a boolean expr
         BoolExpr negExpr = value ? c.mkEq(expr, c.mkFalse()) : c.mkEq(expr, c.mkTrue());
-        if(unsatisfiedBranches.contains(negExpr)) return;
+
+
+        if(unsatisfiedBranches.contains(negExpr)) {
+            PathTracker.addToBranches(expr);
+            return;
+        }
 
         // Call the solver
         if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE)
@@ -181,6 +186,7 @@ public class SymbolicExecutionLab {
             unsatisfiedBranches.add((BoolExpr) currentCondition);
         }
 
+        PathTracker.addToBranches(expr);
 
     }
 
