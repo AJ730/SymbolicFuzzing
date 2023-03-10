@@ -244,8 +244,16 @@ public class SymbolicExecutionLab {
                 currentTrace = current.inputTrace;
                 PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
                 System.out.println("currentTrace:" + currentTrace);
-                PathTracker.reset();
                 //add new trace with random character
+                String[] li = PathTracker.inputSymbols;
+                List<String> newTrace = current.inputTrace;
+                Random r = new Random();
+                for (int i=0; i<traceLength; i++){
+                    newTrace.set(i,li[r.nextInt(traceLength)]);
+                }
+                InputPair nt = new InputPair(1,new ArrayList<>(newTrace));
+                satisfiableTraces.add(nt);
+                PathTracker.reset();
             }
 
             PathTracker.reset();//reset the branches;
