@@ -243,7 +243,7 @@ public class SymbolicExecutionLab {
                 InputPair current = satisfiableTraces.poll();
                 currentTrace = current.inputTrace;
                 PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
-                System.out.println("currentTrace:" + currentTrace);
+                System.out.println("currentTraceLoop:" + currentTrace);
                 //add new trace with random character
                 String[] li = PathTracker.inputSymbols;
                 List<String> newTrace = current.inputTrace;
