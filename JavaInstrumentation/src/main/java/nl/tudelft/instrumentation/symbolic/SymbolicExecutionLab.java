@@ -195,7 +195,7 @@ public class SymbolicExecutionLab {
             PathTracker.solve(negExpr, false);
         }
         else {
-            System.out.println("Unsatisfied");
+            //System.out.println("Unsatisfied");
             unsatisfiedBranches.add(negExpr);
         }
 
@@ -206,10 +206,16 @@ public class SymbolicExecutionLab {
         // Hurray! found a new branch using these new inputs!
 //        System.out.println("Satisfied"+ new_inputs);
         new_inputs.replaceAll(s -> s.replace("\"", ""));
-        new_inputs.addLast(generateRandomString());
-        new_inputs.addLast(generateRandomString());
-        new_inputs.addLast(generateRandomString());
-        new_inputs.addLast(generateRandomString());
+        String[] li = PathTracker.inputSymbols;
+        Random r = new Random();
+        new_inputs.addLast(li[r.nextInt(li.length)]);
+        new_inputs.addLast(li[r.nextInt(li.length)]);
+        new_inputs.addLast(li[r.nextInt(li.length)]);
+        new_inputs.addLast(li[r.nextInt(li.length)]);
+        new_inputs.addLast(li[r.nextInt(li.length)]);
+//        new_inputs.addLast(generateRandomString());
+
+
         satisfiableTraces.add(new InputPair(sizeTr, new LinkedList<>(new_inputs)));
     }
 
@@ -263,10 +269,10 @@ public class SymbolicExecutionLab {
                 InputPair current = satisfiableTraces.poll();
                 currentTrace = current.inputTrace;
                 PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
-                System.out.println("currentTrace:" + currentTrace);
-                System.out.println("Branch size:" +branches.size());
-                System.out.println("Errors: " + errors);
-                //add new trace with random character
+                System.out.println("currentTrace: IN LOOP " + currentTrace);
+                System.out.println("Branch size: IN LOOP " +branches.size());
+                System.out.println("Errors: IN LOOP " + errors);
+                System.out.println("Errors amount: IN LOOP " + errors.size());
                 PathTracker.reset();
             }
         }
