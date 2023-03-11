@@ -32,6 +32,12 @@ public class PathTracker {
      * Used to reset the constraints and everything else of z3 before running the next sequence.
      */
     public static void reset(){
+        try {
+            ctx.close();
+        } catch (Throwable e) {
+            // ignore
+        }
+        ctx = new Context(cfg);
         z3counter  = 1;
         z3model    = ctx.mkTrue();
         z3branches = ctx.mkTrue();

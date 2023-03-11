@@ -22,12 +22,11 @@ public class SymbolicExecutionLab {
 
     static Set<Integer> errors;
 
-    static Context c;
+    static int sizeTr;
 
     static void initialize(String[] inputSymbols) {
         // Initialise a random trace from the input symbols of the problem.
         currentTrace = generateRandomTrace(inputSymbols);
-        c = PathTracker.ctx;
         branches = new HashSet<>();
         errors = new TreeSet<>();
         unsatisfiedBranches = new HashSet<>();
@@ -50,6 +49,7 @@ public class SymbolicExecutionLab {
 
     static MyVar createInput(String name, Expr value, Sort s) {
         // Create an input var, these should be free variables!
+        Context c = PathTracker.ctx;
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s); //create a new symbolic variable
 
         BoolExpr constraint = c.mkFalse();//make the constraint false
@@ -72,6 +72,7 @@ public class SymbolicExecutionLab {
 
     static MyVar createBoolExpr(BoolExpr left_var, BoolExpr right_var, String operator) {
         // Any binary expression (&, &&, |, ||)
+        Context c = PathTracker.ctx;
         switch (operator) {
             case "&":
             case "&&":
@@ -90,7 +91,7 @@ public class SymbolicExecutionLab {
 
     static MyVar createIntExpr(IntExpr var, String operator) {
         // Any unary expression (+, -)
-
+        Context c = PathTracker.ctx;
         switch (operator) {
             case "+":
                 return new MyVar(var);
@@ -104,7 +105,7 @@ public class SymbolicExecutionLab {
 
     static MyVar createIntExpr(IntExpr left_var, IntExpr right_var, String operator) {
         // Any binary expression (+, -, /, etc)
-
+        Context c = PathTracker.ctx;
         switch (operator) {
             case "+":
                 return new MyVar(c.mkAdd(left_var, right_var));
@@ -136,6 +137,7 @@ public class SymbolicExecutionLab {
 
     static MyVar createStringExpr(SeqExpr left_var, SeqExpr right_var, String operator) {
         // We only support String.equals
+        Context c = PathTracker.ctx;
         switch (operator){
             case "==":
                 return new MyVar(c.mkEq(left_var, right_var));
@@ -147,53 +149,68 @@ public class SymbolicExecutionLab {
     }
     static void assign(MyVar var, String name, Expr value, Sort s) {
         // All variable assignments, use single static assignment
+        Context c = PathTracker.ctx;
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s); // make a new static assignment
         var.z3var = z3var; // make use the pointer is updated
         PathTracker.addToModel(c.mkEq(z3var, value)); //add to the model
     }
 
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr) {
-
         //add branches
+
         branches.add(new Pair(line_nr, value));
+
+        Context c = PathTracker.ctx;
         Expr currentCondition = condition.z3var;
 
-
-        if(!(currentCondition instanceof BoolExpr))
+        if (!(currentCondition instanceof BoolExpr))
             throw new UnsupportedOperationException("Encountered a unusual condition" + condition);
 
         BranchPair key = new BranchPair(line_nr, value);
-        if(branchTraces.containsKey(key)){
-            ArrayList<String> keyValue = branchTraces.get(key);
-            if(keyValue.equals(currentTrace)){
-                return;
-            }
-        }
 
         BoolExpr expr = (BoolExpr) condition.z3var; // make sure branch is a boolean expr
         BoolExpr negExpr = value ? c.mkEq(expr, c.mkFalse()) : c.mkEq(expr, c.mkTrue());
 
+//
+//        if (branchTraces.containsKey(key)) {
+//            ArrayList<String> keyValue = branchTraces.get(key);
+//            PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
+//            if (keyValue.equals(currentTrace)) {
+//                System.out.println("Same Branch");
+//                return;
+//            }
+//        }
 
-        if(unsatisfiedBranches.contains(negExpr)) {
-            PathTracker.addToBranches(expr);
+        branchTraces.put(key, new ArrayList<>(currentTrace));
+
+
+        if (unsatisfiedBranches.contains(negExpr)) {
+            PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
             return;
         }
-
+//        PathTracker.solve(negExpr, true);
         // Call the solver
-        if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE)
+        if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE){
+            sizeTr = currentTrace.size();
             PathTracker.solve(negExpr, false);
+        }
         else {
-            unsatisfiedBranches.add((BoolExpr) currentCondition);
+            System.out.println("Unsatisfied");
+            unsatisfiedBranches.add(negExpr);
         }
 
-        PathTracker.addToBranches(expr);
-
+        PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // Hurray! found a new branch using these new inputs!
+//        System.out.println("Satisfied"+ new_inputs);
         new_inputs.replaceAll(s -> s.replace("\"", ""));
-
+        new_inputs.addLast(generateRandomString());
+        new_inputs.addLast(generateRandomString());
+        new_inputs.addLast(generateRandomString());
+        new_inputs.addLast(generateRandomString());
+        satisfiableTraces.add(new InputPair(sizeTr, new LinkedList<>(new_inputs)));
     }
 
     /**
@@ -227,15 +244,18 @@ public class SymbolicExecutionLab {
         return trace;
     }
 
+    static String generateRandomString() {
+        return PathTracker.inputSymbols[r.nextInt(PathTracker.inputSymbols.length)];
+    }
+
     static void run() {
         initialize(PathTracker.inputSymbols);
         PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
-
+        PathTracker.reset();
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
         while (!isFinished) {
             // Do things!
-            PathTracker.reset();
-            System.out.println("Branch size " +branches.size());
+            System.out.println("Branch size:" +branches.size());
             System.out.println("Errors: " + errors);
             System.out.println("currentTrace:" + currentTrace);
 
@@ -244,11 +264,11 @@ public class SymbolicExecutionLab {
                 currentTrace = current.inputTrace;
                 PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
                 System.out.println("currentTrace:" + currentTrace);
-                PathTracker.reset();
+                System.out.println("Branch size:" +branches.size());
+                System.out.println("Errors: " + errors);
                 //add new trace with random character
+                PathTracker.reset();
             }
-
-            PathTracker.reset();//reset the branches;
         }
     }
 
@@ -258,6 +278,8 @@ public class SymbolicExecutionLab {
             errors.add(Integer.parseInt(out.replaceAll("Invalid input: error_", "")));
         }
     }
+
+
 
 
     ////////////////////////custom methods////////////////////////////////
