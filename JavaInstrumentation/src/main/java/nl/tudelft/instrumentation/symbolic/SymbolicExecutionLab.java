@@ -60,7 +60,6 @@ public class SymbolicExecutionLab {
 
         MyVar returnVar = new MyVar(z3var, name); //create new return var
         PathTracker.inputs.add(returnVar); // add them to inputs
-
         return returnVar;
     }
 
@@ -158,7 +157,6 @@ public class SymbolicExecutionLab {
         branches.add(new Pair(line_nr, value));
         Expr currentCondition = condition.z3var;
 
-
         if(!(currentCondition instanceof BoolExpr))
             throw new UnsupportedOperationException("Encountered a unusual condition" + condition);
 
@@ -184,13 +182,18 @@ public class SymbolicExecutionLab {
             PathTracker.solve(negExpr, false);
             // Add trace to satisfiableTraces
             InputPair tr = new InputPair(line_nr, new ArrayList<>(currentTrace));
-            satisfiableTraces.add(tr);}
+            satisfiableTraces.add(tr);
+            System.out.println("Added satisfiable trace");
+
+        }
 
         else {
             unsatisfiedBranches.add((BoolExpr) currentCondition);
         }
 
         PathTracker.addToBranches(expr);
+        PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
+
 
     }
 
@@ -239,11 +242,11 @@ public class SymbolicExecutionLab {
         while (!isFinished) {
             // Do things!
             PathTracker.reset();
-            System.out.println("Branch size " +branches.size());
+            System.out.println("Branch size IN RUN " +branches.size());
             System.out.println("Errors: " + errors);
             System.out.println("currentTrace:" + currentTrace);
-
             while(!satisfiableTraces.isEmpty()){
+                System.out.println("INSIDE THE LOOP ++++++++");
                 InputPair current = satisfiableTraces.poll();
                 currentTrace = current.inputTrace;
                 PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
@@ -264,6 +267,7 @@ public class SymbolicExecutionLab {
 
     public static void output(String out) {
 //        System.out.println(out);
+
         if (StringUtils.contains(out, "error")) {
             errors.add(Integer.parseInt(out.replaceAll("Invalid input: error_", "")));
         }
