@@ -180,8 +180,12 @@ public class SymbolicExecutionLab {
         }
 
         // Call the solver
-        if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE)
+        if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE){
             PathTracker.solve(negExpr, false);
+            // Add trace to satisfiableTraces
+            InputPair tr = new InputPair(line_nr, new ArrayList<>(currentTrace));
+            satisfiableTraces.add(tr);}
+
         else {
             unsatisfiedBranches.add((BoolExpr) currentCondition);
         }
@@ -248,9 +252,7 @@ public class SymbolicExecutionLab {
                 String[] li = PathTracker.inputSymbols;
                 List<String> newTrace = current.inputTrace;
                 Random r = new Random();
-                for (int i=0; i<traceLength; i++){
-                    newTrace.set(i,li[r.nextInt(traceLength)]);
-                }
+                newTrace.add(li[r.nextInt(traceLength)]);
                 InputPair nt = new InputPair(current.lineNmr,new ArrayList<>(newTrace));
                 satisfiableTraces.add(nt);
                 PathTracker.reset();
