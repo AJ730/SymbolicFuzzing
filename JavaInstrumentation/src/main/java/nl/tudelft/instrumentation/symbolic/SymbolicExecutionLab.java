@@ -13,7 +13,7 @@ public class SymbolicExecutionLab {
     static Random r = new Random();
     static Boolean isFinished = false;
     static List<String> currentTrace;
-    static int traceLength = 30;
+    static int traceLength = 500;
     private static HashSet<BoolExpr> unsatisfiedBranches;
     private static HashSet<Pair> branches;
     private static HashMap<BranchPair, ArrayList<String>> branchTraces;
@@ -178,15 +178,15 @@ public class SymbolicExecutionLab {
                 return;
             }
         }
+
         branchTraces.put(key, new ArrayList<>(currentTrace));
 
-        sizeTr = currentTrace.size();
         if (unsatisfiedBranches.contains(negExpr)) {
             PathTracker.addToBranches(valueExpr);
             return;
         }
-//
-        // Call the solver
+
+
         if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE){
             sizeTr = currentTrace.size();
             PathTracker.solve(negExpr, false);
@@ -216,6 +216,12 @@ public class SymbolicExecutionLab {
          * a complete random sequence using the given input symbols. Please
          * change it to your own code.
          */
+
+        int length = 1;
+
+//        while (new_inputs.size() < length){
+//            new_inputs.addLast(generateRandomString());
+//        }
 
         new_inputs.addLast(generateRandomString());
         new_inputs.addLast(generateRandomString());
@@ -247,7 +253,7 @@ public class SymbolicExecutionLab {
     static void run() {
         initialize(PathTracker.inputSymbols);
         PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
-//        PathTracker.reset();
+        PathTracker.reset();
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
         while (!isFinished) {
             // Do things!
