@@ -1,16 +1,15 @@
 package nl.tudelft.instrumentation.symbolic;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Objects;
 
 public class InputPair implements Comparable<InputPair>{
 
-    Integer lineNmr;
+    Integer size;
     LinkedList<String> inputTrace;
 
-    public InputPair(Integer lineNmr, LinkedList<String> inputTrace) {
-        this.lineNmr = lineNmr;
+    public InputPair(Integer size, LinkedList<String> inputTrace) {
+        this.size = size;
         this.inputTrace = inputTrace;
     }
 
@@ -19,24 +18,24 @@ public class InputPair implements Comparable<InputPair>{
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InputPair inputPair = (InputPair) o;
-        return Objects.equals(lineNmr, inputPair.lineNmr) && Objects.equals(inputTrace, inputPair.inputTrace);
+        return Objects.equals(size, inputPair.size) && Objects.equals(inputTrace, inputPair.inputTrace);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(lineNmr, inputTrace);
+        return Objects.hash(size, inputTrace);
     }
 
     @Override
     public String toString() {
         return "InputPair{" +
-                "lineNmr=" + lineNmr +
+                "lineNmr=" + size +
                 ", inputTrace=" + inputTrace +
                 '}';
     }
 
     @Override
     public int compareTo(InputPair o) {
-        return this.lineNmr - o.lineNmr;
+        return o.size - this.size;
     }
 }

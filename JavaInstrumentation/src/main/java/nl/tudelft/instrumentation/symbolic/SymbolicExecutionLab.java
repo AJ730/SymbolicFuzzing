@@ -13,7 +13,7 @@ public class SymbolicExecutionLab {
     static Random r = new Random();
     static Boolean isFinished = false;
     static List<String> currentTrace;
-    static int traceLength = 10;
+    static int traceLength = 30;
     private static HashSet<BoolExpr> unsatisfiedBranches;
     private static HashSet<Pair> branches;
     private static HashMap<BranchPair, ArrayList<String>> branchTraces;
@@ -170,25 +170,22 @@ public class SymbolicExecutionLab {
 
         BoolExpr expr = (BoolExpr) condition.z3var; // make sure branch is a boolean expr
         BoolExpr negExpr = value ? c.mkEq(expr, c.mkFalse()) : c.mkEq(expr, c.mkTrue());
+        BoolExpr valueExpr = value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse());
 
-//
-//        if (branchTraces.containsKey(key)) {
-//            ArrayList<String> keyValue = branchTraces.get(key);
-//            PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
-//            if (keyValue.equals(currentTrace)) {
-//                System.out.println("Same Branch");
-//                return;
-//            }
-//        }
-
+        if (branchTraces.containsKey(key)) {
+            ArrayList<String> keyValue = branchTraces.get(key);
+            if (keyValue.equals(currentTrace)) {
+                return;
+            }
+        }
         branchTraces.put(key, new ArrayList<>(currentTrace));
 
-
+        sizeTr = currentTrace.size();
         if (unsatisfiedBranches.contains(negExpr)) {
-            PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
+            PathTracker.addToBranches(valueExpr);
             return;
         }
-//        PathTracker.solve(negExpr, true);
+//
         // Call the solver
         if (Objects.requireNonNull(PathTracker.solver.check(negExpr)) == Status.SATISFIABLE){
             sizeTr = currentTrace.size();
@@ -199,27 +196,19 @@ public class SymbolicExecutionLab {
             unsatisfiedBranches.add(negExpr);
         }
 
-        PathTracker.addToBranches(value ? c.mkEq(expr, c.mkTrue()) : c.mkEq(expr, c.mkFalse()));
+        PathTracker.addToBranches(valueExpr);
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // Hurray! found a new branch using these new inputs!
 //        System.out.println("Satisfied"+ new_inputs);
         new_inputs.replaceAll(s -> s.replace("\"", ""));
-        new_inputs.addLast(generateRandomString());
-        new_inputs.addLast(generateRandomString());
-        new_inputs.addLast(generateRandomString());
-        new_inputs.addLast(generateRandomString());
-        satisfiableTraces.add(new InputPair(sizeTr, new LinkedList<>(new_inputs)));
+
+        satisfiableTraces.add(new InputPair(sizeTr, new LinkedList<>(fuzz(new_inputs))));
     }
 
-    /**
-     * Method for fuzzing new inputs for a program.
-     *
-     * @param inputSymbols the inputSymbols to fuzz from.
-     * @return a fuzzed sequence
-     */
-    static List<String> fuzz(String[] inputSymbols) {
+
+    static LinkedList<String> fuzz(LinkedList<String> new_inputs) {
         /*
          * Add here your code for fuzzing a new sequence for the RERS problem.
          * You can guide your fuzzer to fuzz "smart" input sequences to cover
@@ -227,7 +216,12 @@ public class SymbolicExecutionLab {
          * a complete random sequence using the given input symbols. Please
          * change it to your own code.
          */
-        return generateRandomTrace(inputSymbols);
+
+        new_inputs.addLast(generateRandomString());
+        new_inputs.addLast(generateRandomString());
+        new_inputs.addLast(generateRandomString());
+        new_inputs.addLast(generateRandomString());
+        return new_inputs;
     }
 
     /**
@@ -245,13 +239,15 @@ public class SymbolicExecutionLab {
     }
 
     static String generateRandomString() {
+
+
         return PathTracker.inputSymbols[r.nextInt(PathTracker.inputSymbols.length)];
     }
 
     static void run() {
         initialize(PathTracker.inputSymbols);
         PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
-        PathTracker.reset();
+//        PathTracker.reset();
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
         while (!isFinished) {
             // Do things!
@@ -267,6 +263,7 @@ public class SymbolicExecutionLab {
                 System.out.println("Branch size:" +branches.size());
                 System.out.println("Errors: " + errors);
                 //add new trace with random character
+
                 PathTracker.reset();
             }
         }
