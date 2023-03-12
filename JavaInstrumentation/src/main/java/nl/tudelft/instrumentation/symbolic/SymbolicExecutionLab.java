@@ -13,7 +13,7 @@ public class SymbolicExecutionLab {
     static Random r = new Random();
     static Boolean isFinished = false;
     static List<String> currentTrace;
-    static int traceLength = 500;
+    static int traceLength = 100;
     private static HashSet<BoolExpr> unsatisfiedBranches;
     private static HashSet<Pair> branches;
     private static HashMap<BranchPair, ArrayList<String>> branchTraces;
@@ -284,7 +284,7 @@ public class SymbolicExecutionLab {
                     satisfiableTraces.clear();
                     System.out.println("----Done----");
 
-                    System.out.println("TIMEMAP:  " + timeMap);
+                    System.out.println("TIMEMAP:  " + timeMap.values());
 
                     return;
                 }
