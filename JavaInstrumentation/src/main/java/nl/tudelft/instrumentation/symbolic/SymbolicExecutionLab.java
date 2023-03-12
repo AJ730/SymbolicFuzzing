@@ -21,7 +21,7 @@ public class SymbolicExecutionLab {
     private static PriorityQueue<InputPair> satisfiableTraces;
 
     static Set<Integer> errors;
-
+    static HashMap<Integer, Integer> timeMap;
     static int sizeTr;
 
     static void initialize(String[] inputSymbols) {
@@ -32,6 +32,7 @@ public class SymbolicExecutionLab {
         unsatisfiedBranches = new HashSet<>();
         satisfiableTraces = new PriorityQueue<>();
         branchTraces = new HashMap<>();
+        timeMap = new HashMap<>();
     }
 
     static MyVar createVar(String name, Expr value, Sort s) {
@@ -192,7 +193,7 @@ public class SymbolicExecutionLab {
             PathTracker.solve(negExpr, false);
         }
         else {
-            System.out.println("Unsatisfied");
+            //System.out.println("Unsatisfied");
             unsatisfiedBranches.add(negExpr);
         }
 
@@ -255,12 +256,15 @@ public class SymbolicExecutionLab {
         PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
         PathTracker.reset();
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
-        while (!isFinished) {
-            // Do things!
-            System.out.println("Branch size:" +branches.size());
-            System.out.println("Errors: " + errors);
-            System.out.println("currentTrace:" + currentTrace);
-
+//        while (!isFinished) {
+//            // Do things!
+//            System.out.println("Branch size:" +branches.size());
+//            System.out.println("Errors: " + errors);
+//            System.out.println("currentTrace:" + currentTrace);
+        long start = System.currentTimeMillis();
+        long end = start + 305 * 1000;
+        long min_before = start;
+        int time_counter = 1;
             while(!satisfiableTraces.isEmpty()){
                 InputPair current = satisfiableTraces.poll();
                 currentTrace = current.inputTrace;
@@ -269,10 +273,24 @@ public class SymbolicExecutionLab {
                 System.out.println("Branch size:" +branches.size());
                 System.out.println("Errors: " + errors);
                 //add new trace with random character
+                long currentTime = System.currentTimeMillis();
+                if (currentTime- min_before >= 5000) {
+                    timeMap.put(time_counter++, errors.size());
+                    min_before = currentTime;
+                }
 
+
+                if (currentTime >= end) {
+                    satisfiableTraces.clear();
+                    System.out.println("----Done----");
+
+                    System.out.println("TIMEMAP:  " + timeMap);
+
+                    return;
+                }
                 PathTracker.reset();
             }
-        }
+//        }
     }
 
     public static void output(String out) {
