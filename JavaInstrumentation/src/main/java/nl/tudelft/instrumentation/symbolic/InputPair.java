@@ -36,6 +36,6 @@ public class InputPair implements Comparable<InputPair>{
 
     @Override
     public int compareTo(InputPair o) {
-        return o.size - this.size;
+        return this.size - o.size;
     }
 }
