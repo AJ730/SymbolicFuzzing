@@ -13,7 +13,7 @@ public class SymbolicExecutionLab {
     static Random r = new Random();
     static Boolean isFinished = false;
     static List<String> currentTrace;
-    static int traceLength = 100;
+    static int traceLength = 20;
     private static HashSet<BoolExpr> unsatisfiedBranches;
     private static HashSet<Pair> branches;
     private static HashMap<BranchPair, ArrayList<String>> branchTraces;
