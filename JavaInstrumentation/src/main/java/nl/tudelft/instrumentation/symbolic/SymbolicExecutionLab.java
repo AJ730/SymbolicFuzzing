@@ -13,7 +13,7 @@ public class SymbolicExecutionLab {
     static Random r = new Random();
     static Boolean isFinished = false;
     static List<String> currentTrace;
-    static int traceLength = 20;
+    static int traceLength =  30;
     private static HashSet<BoolExpr> unsatisfiedBranches;
     private static HashSet<Pair> branches;
     private static HashMap<BranchPair, ArrayList<String>> branchTraces;
@@ -21,7 +21,7 @@ public class SymbolicExecutionLab {
     private static PriorityQueue<InputPair> satisfiableTraces;
 
     static Set<Integer> errors;
-    static HashMap<Integer, Integer> timeMap;
+
     static int sizeTr;
 
     static void initialize(String[] inputSymbols) {
@@ -32,7 +32,6 @@ public class SymbolicExecutionLab {
         unsatisfiedBranches = new HashSet<>();
         satisfiableTraces = new PriorityQueue<>();
         branchTraces = new HashMap<>();
-        timeMap = new HashMap<>();
     }
 
     static MyVar createVar(String name, Expr value, Sort s) {
@@ -43,15 +42,17 @@ public class SymbolicExecutionLab {
          * add similar steps to the functions below in order to
          * obtain a path constraint.
          */
-        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
+        String n = name + "_" + PathTracker.z3counter++;
+        Expr z3var = c.mkConst(c.mkSymbol(n), s);
         PathTracker.addToModel(c.mkEq(z3var, value));
-        return new MyVar(z3var, name);
+        return new MyVar(z3var, n);
     }
 
     static MyVar createInput(String name, Expr value, Sort s) {
         // Create an input var, these should be free variables!
         Context c = PathTracker.ctx;
-        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s); //create a new symbolic variable
+        String n = name + "_" + PathTracker.z3counter++;
+        Expr z3var = c.mkConst(c.mkSymbol(n), s); //create a new symbolic variable
 
         BoolExpr constraint = c.mkFalse();//make the constraint false
         for (String input : PathTracker.inputSymbols) { //loop through all input symbols
@@ -59,7 +60,7 @@ public class SymbolicExecutionLab {
         }
         PathTracker.addToModel(constraint); // add the constraints to the model
 
-        MyVar returnVar = new MyVar(z3var, name); //create new return var
+        MyVar returnVar = new MyVar(z3var, n); //create new return var
         PathTracker.inputs.add(returnVar); // add them to inputs
 
         return returnVar;
@@ -193,7 +194,7 @@ public class SymbolicExecutionLab {
             PathTracker.solve(negExpr, false);
         }
         else {
-            //System.out.println("Unsatisfied");
+            System.out.println("Unsatisfied");
             unsatisfiedBranches.add(negExpr);
         }
 
@@ -256,15 +257,12 @@ public class SymbolicExecutionLab {
         PathTracker.runNextFuzzedSequence(currentTrace.toArray(new String[0]));
         PathTracker.reset();
         // Place here your code to guide your fuzzer with its search using Symbolic Execution.
-//        while (!isFinished) {
-//            // Do things!
-//            System.out.println("Branch size:" +branches.size());
-//            System.out.println("Errors: " + errors);
-//            System.out.println("currentTrace:" + currentTrace);
-        long start = System.currentTimeMillis();
-        long end = start + 305 * 1000;
-        long min_before = start;
-        int time_counter = 1;
+        while (!isFinished) {
+            // Do things!
+            System.out.println("Branch size:" +branches.size());
+            System.out.println("Errors: " + errors);
+            System.out.println("currentTrace:" + currentTrace);
+
             while(!satisfiableTraces.isEmpty()){
                 InputPair current = satisfiableTraces.poll();
                 currentTrace = current.inputTrace;
@@ -273,24 +271,10 @@ public class SymbolicExecutionLab {
                 System.out.println("Branch size:" +branches.size());
                 System.out.println("Errors: " + errors);
                 //add new trace with random character
-                long currentTime = System.currentTimeMillis();
-                if (currentTime- min_before >= 5000) {
-                    timeMap.put(time_counter++, errors.size());
-                    min_before = currentTime;
-                }
 
-
-                if (currentTime >= end) {
-                    satisfiableTraces.clear();
-                    System.out.println("----Done----");
-
-                    System.out.println("TIMEMAP:  " + timeMap.values());
-
-                    return;
-                }
                 PathTracker.reset();
             }
-//        }
+        }
     }
 
     public static void output(String out) {
