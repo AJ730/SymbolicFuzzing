@@ -42,10 +42,10 @@ public class SymbolicExecutionLab {
          * add similar steps to the functions below in order to
          * obtain a path constraint.
          */
-        String n = name + "_" + PathTracker.z3counter++;
-        Expr z3var = c.mkConst(c.mkSymbol(n), s);
+
+        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         PathTracker.addToModel(c.mkEq(z3var, value));
-        return new MyVar(z3var, n);
+        return new MyVar(z3var, name);
     }
 
     static MyVar createInput(String name, Expr value, Sort s) {
